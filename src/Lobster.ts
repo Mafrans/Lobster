@@ -15,7 +15,7 @@ export class Lobster {
             }
 
             this.client.login(token)
-                .then(() => console.log(`🦞 Started Lobster at ${new Date().toDateString()}`))
+                .then(() => console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`))
                 .catch(() => console.log(`❌ Error while logging in, invalid token?`));
         })
         .catch(err => {
