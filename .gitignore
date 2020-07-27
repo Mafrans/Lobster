@@ -210,14 +210,8 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/node,webstorm
 
 config.json
+
 # Project exclude paths
-/src/commands/ChallengeCommand.js
-/src/commands/ChallengeCommand.js.map
-/src/commands/ICommand.js
-/src/commands/ICommand.js.map
-/src/AbstractConfig.js
-/src/AbstractConfig.js.map
-/src/Config.js
-/src/Config.js.map
-/src/Lobster.js
-/src/Lobster.js.map
+/src/**/*.js
+/src/**/*.js.map
+target
