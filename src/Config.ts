@@ -19,7 +19,7 @@ class Config {
 
     save(path: string): Promise<AbstractConfig> {
         return new Promise((resolve, reject) => {
-            fs.writeFile(path, JSON.stringify(this.json), 'utf8', (err) => {
+            fs.writeFile(path, JSON.stringify(this.json, null, 1), 'utf8', (err) => {
                 if(err != null) reject(err);
                 else resolve(this.json);
             });
