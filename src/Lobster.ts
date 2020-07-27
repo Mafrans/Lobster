@@ -1,5 +1,6 @@
 import {Client} from "discord.js";
 import Config from "./Config";
+import MessageListener from "./listeners/MessageListener";
 
 export class Lobster {
     client: Client;
@@ -17,6 +18,8 @@ export class Lobster {
             this.client.login(token)
                 .then(() => console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`))
                 .catch(() => console.log(`❌ Error while logging in, invalid token?`));
+
+            MessageListener.start(this);
         })
         .catch(err => {
             console.error(err);

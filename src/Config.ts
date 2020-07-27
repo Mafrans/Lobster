@@ -3,15 +3,15 @@ import {AbstractConfig} from "./AbstractConfig";
 const fs = require('fs');
 
 class Config {
-    private json: any;
+    data: AbstractConfig;
 
     load(path: string): Promise<AbstractConfig> {
         return new Promise((resolve, reject) => {
             fs.readFile(path, 'utf8', (err, data) => {
                 if(err != null) reject(err);
                 else {
-                    this.json = JSON.parse(data);
-                    resolve(this.json);
+                    this.data = JSON.parse(data);
+                    resolve(this.data);
                 }
             });
         });
@@ -19,15 +19,15 @@ class Config {
 
     save(path: string): Promise<AbstractConfig> {
         return new Promise((resolve, reject) => {
-            fs.writeFile(path, JSON.stringify(this.json, null, 1), 'utf8', (err) => {
+            fs.writeFile(path, JSON.stringify(this.data, null, 1), 'utf8', (err) => {
                 if(err != null) reject(err);
-                else resolve(this.json);
+                else resolve(this.data);
             });
         });
     }
 
     saveDefault(path: string): Promise<AbstractConfig> {
-        this.json = new AbstractConfig();
+        this.data = new AbstractConfig();
         return this.save(path);
     }
 }
