@@ -9,5 +9,6 @@ export interface ICommand {
 }
 
 export enum CommandResult {
+    OK,
     BAD_SYNTAX
 }
