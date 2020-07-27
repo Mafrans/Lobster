@@ -1,7 +1,7 @@
 import {ICommand} from "./ICommand";
 
 class CommandManager {
-    private commands: ICommand[];
+    private commands: ICommand[] = [];
 
     register(command: ICommand): void {
         if(this.commands.includes(command)) {
