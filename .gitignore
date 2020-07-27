@@ -214,4 +214,4 @@ config.json
 # Project exclude paths
 /src/**/*.js
 /src/**/*.js.map
-target
+/target
