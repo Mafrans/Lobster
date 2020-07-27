@@ -1,7 +1,7 @@
 export class AbstractConfig {
     token: string = "aaaabbbbccccdddd";
-    prefix: {
+    prefix: any = {
         value: 'l!',
         caseSensitive: false,
-    }
+    };
 }
