@@ -1,6 +1,8 @@
 import {Client} from "discord.js";
 import Config from "./Config";
 import MessageListener from "./listeners/MessageListener";
+import CommandManager from "./commands/CommandManager";
+import {ChallengeCommand} from "./commands/ChallengeCommand";
 
 export class Lobster {
     client: Client;
@@ -18,6 +20,8 @@ export class Lobster {
             this.client.login(token)
                 .then(() => console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`))
                 .catch(() => console.log(`❌ Error while logging in, invalid token?`));
+
+            CommandManager.register(new ChallengeCommand());
 
             MessageListener.start(this);
         })
