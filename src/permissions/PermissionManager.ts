@@ -27,12 +27,14 @@ class PermissionManager {
 
     hasPermission(member: GuildMember, permission: Permission): boolean {
         const roles = this.roles.filter(a => member.roles.cache.find(b => a.name === b.name) !== undefined);
+        let hasPermission: boolean = false;
         roles.forEach(role => {
             if(role.permissions.includes(permission) || role.permissions.includes(Permission.EVERYTHING)) {
-                return true;
+                hasPermission = true;
+                return;
             }
         });
-        return false;
+        return hasPermission;
     }
 }
 

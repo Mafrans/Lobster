@@ -29,8 +29,11 @@ class MessageListener implements IListener {
 
                 switch (result) {
                     case CommandResult.BAD_SYNTAX:
-                        message.channel.send(`Bad syntax, the correct usage for \`${command.name.replace(/^\w/, c => c.toUpperCase())}\` is `
+                        message.channel.send(`:question: Bad syntax, the correct usage for \`${command.name.replace(/^\w/, c => c.toUpperCase())}\` is `
                                             + `\`\`\`${prefix}${command.usage.replace("<command>", cmd)}\`\`\``);
+                        break;
+                    case CommandResult.NO_PERMISSION:
+                        message.channel.send(`:x: You don't have permission to use that command.`);
                         break;
                 }
             }

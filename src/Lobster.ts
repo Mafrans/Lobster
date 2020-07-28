@@ -11,24 +11,34 @@ export class Lobster {
         this.client = new Client();
     }
 
-    start(token: string): void {
-        Config.load('config.json').then(config => {
-            if(token == null) {
-                token = config.token;
-            }
+    start(token: string): Promise<null> {
+        return new Promise((resolve, reject) => {
+            Config.load('config.json').then(config => {
+                if(token == null) {
+                    token = config.token;
+                }
 
-            this.client.login(token)
-                .then(() => console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`))
-                .catch(() => console.log(`❌ Error while logging in, invalid token?`));
+                this.client.login(token)
+                    .then(() => {
+                        console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`);
+                        resolve();
+                    })
+                    .catch(() => {
+                        console.log(`❌ Error while logging in, invalid token?`)
+                        reject();
+                    });
+            })
+            .catch(err => {
+                console.error(err);
+
+                Config.saveDefault('config.json')
+                    .then(() => {
+                        console.log(`📝 Generated new config file.`);
+                        process.exit();
+                    })
+
+                reject();
+            });
         })
-        .catch(err => {
-            console.error(err);
-
-            Config.saveDefault('config.json')
-                .then(() => {
-                    console.log(`📝 Generated new config file.`);
-                    process.exit();
-                })
-        });
     }
 }

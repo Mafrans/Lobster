@@ -10,5 +10,6 @@ export interface ICommand {
 
 export enum CommandResult {
     OK,
-    BAD_SYNTAX
+    BAD_SYNTAX,
+    NO_PERMISSION,
 }

@@ -19,13 +19,13 @@ const argv = yargs
 
 
 
-lobster.start(argv.token);
+lobster.start(argv.token).then(() => {
+    CommandManager.register(new ChallengeCommand());
 
-CommandManager.register(new ChallengeCommand());
+    PermissionManager.register(new LobsterBossRole());
+    lobster.client.guilds.cache.forEach(guild => {
+        PermissionManager.createFor(guild);
+    });
 
-PermissionManager.register(new LobsterBossRole());
-lobster.client.guilds.cache.forEach(guild => {
-    PermissionManager.createFor(guild);
+    MessageListener.start(lobster);
 });
-
-MessageListener.start(lobster);
