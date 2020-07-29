@@ -1,6 +1,6 @@
 import {Lobster} from "./Lobster";
 import CommandManager from "./commands/CommandManager";
-import {ChallengeCommand} from "./commands/ChallengeCommand";
+import {ArtchallengeCommand} from "./commands/ArtchallengeCommand";
 import MessageListener from "./listeners/MessageListener";
 import PermissionManager from "./permissions/PermissionManager";
 import {LobsterBossRole} from "./permissions/LobsterBossRole";
@@ -20,12 +20,12 @@ const argv = yargs
 
 
 lobster.start(argv.token).then(() => {
-    CommandManager.register(new ChallengeCommand());
+    CommandManager.register(new ArtchallengeCommand());
 
     PermissionManager.register(new LobsterBossRole());
-    lobster.client.guilds.cache.forEach(guild => {
+    Lobster.client.guilds.cache.forEach(guild => {
         PermissionManager.createFor(guild);
     });
 
-    MessageListener.start(lobster);
+    MessageListener.start();
 });

@@ -2,13 +2,13 @@ import {Client} from "discord.js";
 import Config from "./Config";
 import MessageListener from "./listeners/MessageListener";
 import CommandManager from "./commands/CommandManager";
-import {ChallengeCommand} from "./commands/ChallengeCommand";
+import {ArtchallengeCommand} from "./commands/ArtchallengeCommand";
 
 export class Lobster {
-    client: Client;
+    static client: Client;
 
     constructor() {
-        this.client = new Client();
+        Lobster.client = new Client();
     }
 
     start(token: string): Promise<null> {
@@ -18,7 +18,7 @@ export class Lobster {
                     token = config.token;
                 }
 
-                this.client.login(token)
+                Lobster.client.login(token)
                     .then(() => {
                         console.log(`🦞 Started Lobster at ${new Date().toTimeString()} ${new Date().toDateString()}`);
                         resolve();
