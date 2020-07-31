@@ -1,6 +1,6 @@
 import {Lobster} from "../Lobster";
 import {IListener} from "./IListener";
-import {Message, MessageType, User} from "discord.js";
+import {Message, MessageReaction, PartialUser, User} from "discord.js";
 import Config from "../Config";
 import CommandManager from "../commands/CommandManager";
 import {CommandResult} from "../commands/ICommand";
@@ -8,19 +8,22 @@ import ArtChallengeManager from "../ArtChallengeManager";
 import {ArtChallenge, ArtChallengeSubmission} from "../ArtChallenge";
 
 class MessageListener implements IListener {
-    waiting: {options: ReplyOptions, callback: (message) => void}[] = [];
+    waitingForReply: { options: ReplyOptions, callback: (message) => void }[] = [];
+    waitingForReaction: { options: ReactOptions, callback: (message) => void }[] = [];
 
     start() {
         Lobster.client.on('message', msg => this.onMessage(msg));
+        Lobster.client.on('messageReactionAdd', (reaction, user) => this.onReactAdd(reaction, user));
+        Lobster.client.on('messageReactionRemove', (reaction, user) => this.onReactRemove(reaction, user));
     }
 
     onMessage(message: Message): void {
-        this.waiting.filter(e => e.options.author.id === message.author.id && e.options.channel === message.channel.id).forEach(reply => {
+        this.waitingForReply.filter(e => e.options.author.id === message.author.id && e.options.channel === message.channel.id).forEach(reply => {
             console.log(message);
             reply.callback(message);
         })
 
-        switch(message.channel.type) {
+        switch (message.channel.type) {
             case 'dm':
                 this.onDirectMessage(message)
                 break;
@@ -30,12 +33,48 @@ class MessageListener implements IListener {
         }
     }
 
+    onReactAdd(reaction: MessageReaction, user: User | PartialUser) {
+        this.waitingForReaction
+            .filter(e =>
+                (e.options.users.includes(user.id) || e.options.users.length == 0)
+                && e.options.emoji === reaction.emoji.name
+                && e.options.type === 'add'
+            )
+            .forEach(instance => {
+                instance.callback(reaction.message);
+            });
+    }
+
+    onReactRemove(reaction: MessageReaction, user: User | PartialUser) {
+        this.waitingForReaction
+            .filter(e =>
+                (e.options.users.includes(user.id) || e.options.users.length == 0)
+                && e.options.emoji === reaction.emoji.name
+                && e.options.type === 'remove'
+            )
+            .forEach(instance => {
+                instance.callback(reaction.message);
+            });
+    }
+
     waitForReply(options: ReplyOptions): Promise<Message> {
         return new Promise((resolve, reject) => {
-            this.waiting.push({
+            this.waitingForReply.push({
                 options: options,
                 callback: message => {
-                    this.waiting = this.waiting.filter(e => e.options !== options);
+                    this.waitingForReply = this.waitingForReply.filter(e => e.options !== options);
+                    resolve(message);
+                },
+            });
+        })
+    }
+
+    waitForReact(options: ReactOptions): Promise<Message> {
+        return new Promise((resolve, reject) => {
+            this.waitingForReaction.push({
+                options: options,
+                callback: message => {
+                    this.waitingForReaction = this.waitingForReaction.filter(e => e.options !== options);
                     resolve(message);
                 },
             });
@@ -51,29 +90,37 @@ class MessageListener implements IListener {
             }
 
             message.channel.send('Thank you for your submission, what art challenge do you wish to submit to? (The contest ID is provided by the host)');
-            const contestId: string = (await this.waitForReply({channel: message.channel.id, author: message.author})).content;
+            const contestId: string = (await this.waitForReply({
+                channel: message.channel.id,
+                author: message.author
+            })).content;
             let challenge: ArtChallenge;
 
             try {
                 challenge = await ArtChallengeManager.getChallenge(contestId.toLowerCase());
-            }
-            catch (e) {
+            } catch (e) {
                 message.channel.send(':x: There is no art challenge with that ID running right now.');
                 return;
             }
 
             message.channel.send('What should your artwork be called?');
-            const title: string = (await this.waitForReply({channel: message.channel.id, author: message.author})).content;
+            const title: string = (await this.waitForReply({
+                channel: message.channel.id,
+                author: message.author
+            })).content;
 
-            const existingSubmission: ArtChallengeSubmission = challenge.submissions.find(e => e.author === message.author.id);
-            if(existingSubmission != null) {
-                while(true) {
-                    message.channel.send('You have already submitted an artwork to this challenge, do you wish to replace it?');
-                    const replace: string = (await this.waitForReply({channel: message.channel.id, author: message.author})).content.toLowerCase();
+            const existingSubmission: ArtChallengeSubmission = await ArtChallengeManager.getSubmission(message.author.id, challenge.id);
+            if (existingSubmission != null) {
+                while (true) {
+                    message.channel.send('You have already submitted an artwork to this challenge, do you wish to replace it? (Yes/No)');
+                    const replace: string = (await this.waitForReply({
+                        channel: message.channel.id,
+                        author: message.author
+                    })).content.toLowerCase();
 
-                    switch(replace) {
+                    switch (replace) {
                         case 'yes':
-                            ArtChallengeManager.removeSubmission(existingSubmission, challenge.id);
+                            ArtChallengeManager.removeSubmission(existingSubmission);
                             break;
 
                         case 'no':
@@ -88,18 +135,33 @@ class MessageListener implements IListener {
                 }
             }
 
-            ArtChallengeManager.addSubmission({
+            const submission: ArtChallengeSubmission = {
                 image: image.url,
                 title: title,
                 author: message.author.id,
-                accepted: {}
-            }, challenge.id);
+                accepted: {},
+                challenge: challenge.id
+            };
+            ArtChallengeManager.addSubmission(submission);
 
             message.channel.send(
                 `:lobster: Successfully submitted your artwork "${title}" to \`${challenge.id}\`.\n`
                 + `React to this message with :x: to remove your submission.`
             ).then(message => {
                 message.react('❌');
+
+                this.waitForReact({
+                        message: message,
+                        emoji: '❌',
+                        users: [ submission.author ],
+                        type: 'add'
+                    })
+                    .then(() => {
+                        ArtChallengeManager.removeSubmission(submission);
+
+                        message.delete();
+                        message.channel.send(':lobster: Your submission was successfully removed.');
+                    })
             });
         }
     }
@@ -114,7 +176,7 @@ class MessageListener implements IListener {
 
         if (content.startsWith(prefix)) {
             content = message.content.substr(prefix.length);
-             const cmd: string = content.split(" ")[0];
+            const cmd: string = content.split(" ")[0];
 
             const command = CommandManager.find(cmd);
             if (command != null) {
@@ -138,6 +200,13 @@ class MessageListener implements IListener {
 interface ReplyOptions {
     channel: string;
     author: User;
+}
+
+interface ReactOptions {
+    message: Message;
+    emoji: string;
+    users: string[];
+    type: 'add' | 'remove'
 }
 
 export default new MessageListener();

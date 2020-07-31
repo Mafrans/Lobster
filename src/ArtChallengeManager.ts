@@ -64,12 +64,28 @@ class ArtChallengeManager {
         });
     }
 
-    addSubmission(submission: ArtChallengeSubmission, challengeId: string) {
-        this.database.update({id: challengeId}, {$addToSet: {submissions: submission}})
+    getSubmission(author: string, challenge: string): Promise<ArtChallengeSubmission> {
+        return new Promise((resolve, reject) => {
+            this.database.findOne({ author: author, challenge: challenge }, function (err, doc) {
+                if(err) {
+                    reject(err);
+                }
+
+                resolve(doc);
+            }.bind(this));
+        })
     }
 
-    removeSubmission(submission: ArtChallengeSubmission, challengeId: string) {
-        this.database.update({id: challengeId}, {$pull: {submissions: submission}})
+    addSubmission(submission: ArtChallengeSubmission) {
+        this.database.insert(submission)
+    }
+
+    removeSubmission(submission: ArtChallengeSubmission) {
+        this.database.find({ author: submission.author, challenge: submission.challenge }, function (err, doc) {
+            console.log(doc);
+
+            this.database.remove({ author: submission.author, challenge: submission.challenge });
+        }.bind(this));
     }
 }
 

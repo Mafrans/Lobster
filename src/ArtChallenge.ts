@@ -22,7 +22,8 @@ export interface ArtChallengeSubmission {
     image: string;
     title: string;
     author: string;
-    accepted: {[host: string]: boolean};
+    accepted: {[host: string]: string};
+    challenge: string;
 }
 
 export enum ArtChallengeResult {
