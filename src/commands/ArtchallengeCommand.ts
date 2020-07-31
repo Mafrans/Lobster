@@ -10,7 +10,7 @@ export class ArtchallengeCommand implements ICommand {
     name: string = 'challenge';
     usage: string = '<command> <start|stop> [id...]'
 
-    run(cmd: string, author: User, args: string[], message: Message): CommandResult {
+    async run(cmd: string, author: User, args: string[], message: Message): Promise<CommandResult> {
         if(!PermissionManager.hasPermission(message.member, Permission.CHALLENGE_CREATE)) {
             return CommandResult.NO_PERMISSION;
         }

@@ -5,7 +5,7 @@ export interface ICommand {
     aliases: string[];
     usage: string;
 
-    run(cmd: string, author: User, args: string[], message: Message): CommandResult;
+    run(cmd: string, author: User, args: string[], message: Message): Promise<CommandResult>;
 }
 
 export enum CommandResult {

@@ -181,17 +181,17 @@ class MessageListener implements IListener {
             const command = CommandManager.find(cmd);
             if (command != null) {
                 const args: string[] = content.split(" ").splice(1);
-                const result: CommandResult = command.run(cmd, message.author, args, message);
-
-                switch (result) {
-                    case CommandResult.BAD_SYNTAX:
-                        message.channel.send(`:question: Bad syntax, the correct usage for \`${command.name.replace(/^\w/, c => c.toUpperCase())}\` is `
-                            + `\`\`\`${prefix}${command.usage.replace("<command>", cmd)}\`\`\``);
-                        break;
-                    case CommandResult.NO_PERMISSION:
-                        message.channel.send(`:x: You don't have permission to use that command.`);
-                        break;
-                }
+                command.run(cmd, message.author, args, message).then(result => {
+                    switch (result) {
+                        case CommandResult.BAD_SYNTAX:
+                            message.channel.send(`:question: Bad syntax, the correct usage for \`${command.name.replace(/^\w/, c => c.toUpperCase())}\` is `
+                                + `\`\`\`${prefix}${command.usage.replace("<command>", cmd)}\`\`\``);
+                            break;
+                        case CommandResult.NO_PERMISSION:
+                            message.channel.send(`:x: You don't have permission to use that command.`);
+                            break;
+                    }
+                });
             }
         }
     }
