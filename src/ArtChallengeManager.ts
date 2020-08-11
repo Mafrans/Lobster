@@ -98,6 +98,7 @@ class ArtChallengeManager {
                 type: 'add'
             }).then(() => {
                 submission.accepted[host.id] = message.id;
+                this.database.update({author: submission.author, challenge: submission.challenge}, submission);
 
                 if(Object.keys(submission.accepted).filter(k => submission.accepted[k] != null).length === Object.keys(submission.accepted).length) {
                     Lobster.client.channels.fetch(challenge.submissionChannel)

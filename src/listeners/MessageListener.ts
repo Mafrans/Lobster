@@ -18,8 +18,9 @@ class MessageListener implements IListener {
     }
 
     onMessage(message: Message): void {
+        //console.log(message);
         this.waitingForReply.filter(e => e.options.author.id === message.author.id && e.options.channel === message.channel.id).forEach(reply => {
-            console.log(message);
+            //console.log(message);
             reply.callback(message);
         })
 
@@ -82,6 +83,8 @@ class MessageListener implements IListener {
     }
 
     async onDirectMessage(message: Message): Promise<void> {
+        if(message.author.id === Lobster.client.user.id) return; // Don't respond to own messages
+
         if (message.attachments.size > 0) {
             const image = message.attachments.array()[0];
             if (image.height <= 0 || (!image.name.toLowerCase().endsWith('.png') && !image.name.toLowerCase().endsWith('.jpg'))) {
@@ -111,6 +114,11 @@ class MessageListener implements IListener {
 
             const existingSubmission: ArtChallengeSubmission = await ArtChallengeManager.getSubmission(message.author.id, challenge.id);
             if (existingSubmission != null) {
+                if(Object.keys(existingSubmission.accepted).filter(k => existingSubmission.accepted[k] != null).length === Object.keys(existingSubmission.accepted).length) {
+                    message.channel.send(':x: The artwork you submitted to this channel earlier has already been accepted, and can therefore not be replaced.')
+                    return;
+                }
+
                 while (true) {
                     message.channel.send('You have already submitted an artwork to this challenge, do you wish to replace it? (Yes/No)');
                     const replace: string = (await this.waitForReply({
@@ -157,10 +165,17 @@ class MessageListener implements IListener {
                         type: 'add'
                     })
                     .then(() => {
-                        ArtChallengeManager.removeSubmission(submission);
+                        ArtChallengeManager.getSubmission(submission.author, submission.challenge).then(_submission => {
+                            if(Object.keys(_submission.accepted).filter(k => _submission.accepted[k] != null).length === Object.keys(_submission.accepted).length) {
+                                message.channel.send(':x: Your submission has been accepted into the challenge, and can therefore no longer be removed.');
+                                return;
+                            }
 
-                        message.delete();
-                        message.channel.send(':lobster: Your submission was successfully removed.');
+                            ArtChallengeManager.removeSubmission(submission);
+
+                            message.delete();
+                            message.channel.send(':lobster: Your submission was successfully removed.');
+                        })
                     })
             });
         }

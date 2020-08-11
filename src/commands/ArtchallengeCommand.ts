@@ -4,6 +4,7 @@ import PermissionManager from "../permissions/PermissionManager";
 import {Permission} from "../permissions/Permission";
 import ArtChallengeManager from "../ArtChallengeManager";
 import {ArtChallenge, ArtChallengeResult} from "../ArtChallenge";
+import MessageListener from "../listeners/MessageListener";
 
 export class ArtchallengeCommand implements ICommand {
     aliases: string[] = [];
@@ -11,7 +12,7 @@ export class ArtchallengeCommand implements ICommand {
     usage: string = '<command> <start|stop> [id...]'
 
     async run(cmd: string, author: User, args: string[], message: Message): Promise<CommandResult> {
-        if(!PermissionManager.hasPermission(message.member, Permission.CHALLENGE_CREATE)) {
+        if(!await PermissionManager.hasPermission(message.member, Permission.CHALLENGE_CREATE)) {
             return CommandResult.NO_PERMISSION;
         }
 
@@ -21,36 +22,64 @@ export class ArtchallengeCommand implements ICommand {
 
         if(args[0].toLowerCase() === 'start') {
             const challenge: ArtChallenge = new ArtChallenge(message.guild);
-            ArtChallengeManager.start(challenge)
-                .then(result => {
-                    switch(result) {
-                        case ArtChallengeResult.OK:
-                            message.channel.send(
-                                `:lobster: Created a new Art Challenge with the ID \`${challenge.id}\`.\n`
-                                + `:pencil: The ID is required to submit an artwork.`
-                            );
-                            break;
 
-                        default:
-                            message.channel.send(`:warning: Something unexpected happened, this is unlikely to cause any issues.`);
-                            break;
-                    }
-                })
-                .catch(result => {
-                    switch(result) {
-                        case ArtChallengeResult.ERR_IN_DATABASE:
-                            message.channel.send(`:x: There was an error while reading or writing to the database, please try again later.`);
-                            break;
+            try {
+                message.channel.send(`:pencil: What should the Art Challenge's theme be?`);
+                challenge.theme = (await MessageListener.waitForReply({
+                    channel: message.channel.id,
+                    author: message.author
+                })).content;
 
-                        case ArtChallengeResult.ERR_DUPLICATE:
-                            this.run(cmd, author, args, message); // Recursively run the command again, can crash the bot if handled badly.
-                            break;
+                message.channel.send(`:hash: In what channel should submissions be displayed?`);
+                const submissionChannelMatch = /<#([0-9]{18})>/g.exec((await MessageListener.waitForReply({
+                    channel: message.channel.id,
+                    author: message.author
+                })).content);
 
-                        default:
-                            message.channel.send(`:x: An unknown error occurred.`);
-                            break;
-                    }
-                })
+                if(submissionChannelMatch === null) {
+                    message.channel.send(`:x: That's not a valid channel`);
+                    return CommandResult.OK;
+                }
+
+                challenge.submissionChannel = submissionChannelMatch[1];
+
+                message.channel.send(`:mens: Who should be hosting this challenge?`);
+                challenge.hosts = (await MessageListener.waitForReply({
+                    channel: message.channel.id,
+                    author: message.author
+                })).mentions.users.keyArray();
+
+                const result: ArtChallengeResult = await ArtChallengeManager.start(challenge);
+
+                switch(result) {
+                    case ArtChallengeResult.OK:
+                        message.channel.send(
+                            `:lobster: Created a new Art Challenge with the ID \`${challenge.id}\`.\n`
+                            + ` The ID is required to submit an artwork.`
+                        );
+                        break;
+
+                    default:
+                        message.channel.send(`:warning: Something unexpected happened, this is unlikely to cause any issues.`);
+                        break;
+                }
+            }
+            catch (e) {
+                switch(e) {
+                    case ArtChallengeResult.ERR_IN_DATABASE:
+                        message.channel.send(`:x: There was an error while reading or writing to the database, please try again later.`);
+                        break;
+
+                    case ArtChallengeResult.ERR_DUPLICATE:
+                        this.run(cmd, author, args, message); // Recursively run the command again, can crash the bot if handled badly.
+                        break;
+
+                    default:
+                        message.channel.send(`:x: An unknown error occurred.`);
+                        break;
+                }
+            }
+
             return CommandResult.OK;
         }
 
