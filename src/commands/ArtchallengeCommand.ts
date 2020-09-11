@@ -88,6 +88,7 @@ export class ArtchallengeCommand implements ICommand {
             }
             catch (e) {
                 console.error(e);
+                console.trace();
                 switch(e) {
                     case ArtChallengeResult.ERR_IN_DATABASE:
                         message.channel.send(`:x: There was an error while reading or writing to the database, please try again later.`);
