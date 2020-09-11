@@ -34,7 +34,7 @@ export class ArtchallengeCommand implements ICommand {
                     if(id.toLowerCase() === 'random') {
                         break;
                     }
-                    else if(/^[a-zA-Z0-9\-_ ]+/.test(id)) {
+                    else if(!/^[a-zA-Z0-9\-_ ]+/.test(id)) {
                         message.channel.send(`:x: The id may only include alphanumeric characters, spaces, dashes and underscores.`);
                     }
                     else if(ArtChallengeManager.getChallenge(id) != null) {
