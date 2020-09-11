@@ -24,6 +24,28 @@ export class ArtchallengeCommand implements ICommand {
             const challenge: ArtChallenge = new ArtChallenge(message.guild);
 
             try {
+                while(true) {
+                    message.channel.send(`:pencil: What should the Art Challenge's id be? (respond with 'random' for a randomly generated id)`);
+                    const id = (await MessageListener.waitForReply({
+                        channel: message.channel.id,
+                        author: message.author
+                    })).content;
+
+                    if(id.toLowerCase() === 'random') {
+                        break;
+                    }
+                    else if(id.match(/[a-zA-Z0-9\-_ ]/).length != 0) {
+                        message.channel.send(`:x: The id may only include alphanumeric characters, spaces, dashes and underscores.`);
+                    }
+                    else if(ArtChallengeManager.getChallenge(id) != null) {
+                        message.channel.send(`:x: There is already a challenge with this id.`);
+                    }
+                    else {
+                        challenge.id = id.toLowerCase();
+                        break;
+                    }
+                }
+
                 message.channel.send(`:pencil: What should the Art Challenge's theme be?`);
                 challenge.theme = (await MessageListener.waitForReply({
                     channel: message.channel.id,
